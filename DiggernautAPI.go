@@ -83,7 +83,7 @@ func (a *API) GetProjects() error {
 		fmt.Println(err)
 		return err
 	}
-	fmt.Println(a.Projects)
+
 	return nil
 }
 
