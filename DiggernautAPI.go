@@ -1,4 +1,4 @@
-package main
+package DiggernautAPI
 
 import (
 	"bytes"
@@ -14,7 +14,7 @@ import (
 var client = &http.Client{}
 var apikey string
 
-// API struct contans slice of projects.
+// API struct contains slice of projects.
 type API struct {
 	Projects []Project `json:"projects,omitempty"`
 }
@@ -237,9 +237,10 @@ func (p *Project) Delete() error {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return errors.New(string(body[:]))
 	}
-	
+
 	return nil
 }
+
 // GetDiggers returns list of diggers from specified project
 // and push it in API.Projects[p.ID].Diggers slice
 func (p *Project) GetDiggers() error {
@@ -263,6 +264,7 @@ func (p *Project) GetDiggers() error {
 	}
 	return nil
 }
+
 // CreateDigger creates new digger for authenticated user account
 // and push it in API.Projects[p.ID].Diggers slice
 func (p *Project) CreateDigger(params map[string]interface{}) error {
@@ -298,6 +300,7 @@ func (p *Project) CreateDigger(params map[string]interface{}) error {
 	p.Diggers = append(p.Diggers, d)
 	return nil
 }
+
 // Get gets parameters for digger
 // and rewrite Digger in API.Projects[p.ID].Digger[d.ID] slice
 func (d *Digger) Get() error {
@@ -324,6 +327,7 @@ func (d *Digger) Get() error {
 	}
 	return nil
 }
+
 // Put updates digger parameters
 // and rewrite Digger in API.Projects[p.ID].Digger[d.ID] slice,
 // all required fields will be updated with sent parameters
@@ -357,6 +361,7 @@ func (d *Digger) Put(params map[string]interface{}) error {
 	}
 	return nil
 }
+
 // Patch updates digger parameters partially
 // and rewrite Digger in API.Projects[p.ID].Digger[d.ID] slice,
 // only sent fields will be updated.
@@ -391,6 +396,7 @@ func (d *Digger) Patch(params map[string]interface{}) error {
 	}
 	return nil
 }
+
 // Delete deletes digger
 // Note! you must call Project[p.ID].GetDiggers()
 // to update Diggers slice
@@ -412,6 +418,7 @@ func (d *Digger) Delete() error {
 	}
 	return nil
 }
+
 // GetSessions gets list of sessions for digger
 // and push it in API.Projects[p.ID].Diggers[d.ID].Sessions slice
 func (d *Digger) GetSessions() error {
@@ -438,6 +445,7 @@ func (d *Digger) GetSessions() error {
 	}
 	return nil
 }
+
 // Get gets session parameters
 // and rewrite it in API.Projects[p.ID].Diggers[d.ID].Sessions[s.ID] slice
 func (s *Session) Get() error {
@@ -464,6 +472,7 @@ func (s *Session) Get() error {
 	}
 	return nil
 }
+
 // GetData gets data scraped in given session
 // and push it in API.Projects[p.ID].Diggers[d.ID].Sessions[s.ID].Data
 func (s *Session) GetData() error {
