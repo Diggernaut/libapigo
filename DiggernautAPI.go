@@ -27,7 +27,7 @@ type Project struct {
 	Diggers     []Digger `json:"diggers,omitempty"`
 }
 
-// Digger cointains single project
+// Digger cointains single digger
 type Digger struct {
 	ID           int
 	Name         string
