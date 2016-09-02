@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -80,7 +79,6 @@ func (a *API) GetProjects() error {
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &a.Projects)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
@@ -143,7 +141,6 @@ func (p *Project) Get() error {
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &p)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return nil
@@ -259,7 +256,6 @@ func (p *Project) GetDiggers() error {
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &p.Diggers)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return nil
@@ -322,7 +318,6 @@ func (d *Digger) Get() error {
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &d)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return nil
@@ -440,7 +435,6 @@ func (d *Digger) GetSessions() error {
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &d.Sessions)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return nil
@@ -467,7 +461,6 @@ func (s *Session) Get() error {
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &s)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return nil
@@ -494,7 +487,6 @@ func (s *Session) GetData() error {
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &s.Data)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return nil
