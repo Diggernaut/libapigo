@@ -7,7 +7,7 @@ Diggernaut Official API Library for Go
 go get github.com/Diggernaut/libapigo
 
 #### usage:
-```golang
+```go
 package main
 
 import (
