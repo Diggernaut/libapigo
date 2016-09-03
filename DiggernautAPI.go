@@ -95,7 +95,6 @@ func (d *Digger) UnmarshalJSON(data []byte) error {
 	dig := digger{}
 	err := json.Unmarshal(data, &dig)
 	if err != nil {
-
 		return err
 	}
 	d.id = dig.ID
@@ -108,8 +107,9 @@ func (d *Digger) UnmarshalJSON(data []byte) error {
 	d.bandwidth = dig.Bandwidth
 	d.calls = dig.Calls
 	d.requests = dig.Requests
-	fmt.Println(d)
+
 	return nil
+
 }
 func (d *Digger) ID() int {
 	return d.id
@@ -117,8 +117,11 @@ func (d *Digger) ID() int {
 func (d *Digger) Status() string {
 	return d.status
 }
-func (d *Digger) Bandwdth() string {
-	return fmt.Sprintf("%.0f\n", d.bandwidth)
+func (d *Digger) BandwidthString() string {
+	return fmt.Sprintf("%.2f", d.bandwidth/1024/1024) + " Mb"
+}
+func (d *Digger) Bandwidth() float64 {
+	return d.bandwidth
 }
 func (d *Digger) Calls() int {
 	return d.calls
@@ -136,7 +139,7 @@ type Session struct {
 	finishedAt timestamp.Timestamp `json:"finished_at,omitempty"`
 	state      string
 	runtime    int
-	bandwidth  int64
+	bandwidth  float64
 	requests   int
 	errors     int
 	data       interface{}
@@ -150,7 +153,7 @@ func (s *Session) UnmarshalJSON(data []byte) error {
 		FinishedAt timestamp.Timestamp `json:"finished_at,omitempty"`
 		State      string
 		Runtime    int
-		Bandwidth  int64
+		Bandwidth  float64
 		Requests   int
 		Errors     int
 		Data       interface{}
@@ -185,7 +188,10 @@ func (s *Session) State() string {
 func (s *Session) Runtime() int {
 	return s.runtime
 }
-func (s *Session) Bandwidth() int64 {
+func (s *Session) BandwidthString() string {
+	return fmt.Sprintf("%.2f", s.bandwidth/1024/1024) + " Mb"
+}
+func (s *Session) Bandwidth() float64 {
 	return s.bandwidth
 }
 func (s *Session) Requests() int {
