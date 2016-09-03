@@ -75,17 +75,13 @@ type Session struct {
 	Data       interface{}
 }
 
-// SetUpAPISKey it`s startpoint for using our APIS
-// arg must be you APIS key
-func SetUpAPISKey(key string) {
-	apiSkey = key
-}
+
 
 // GetProjects returns list of projects linked with
 // authenticated user account and push it in APIS.Projects slice
 func (a *API) GetProjects() ([]Project, error) {
-	req, _ := http.NewRequest("GET", "https://www.diggernaut.com/apiS/v1/projects/", nil)
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req, _ := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/projects/", nil)
+	req.Header.Add("Authorization", "Token "+a.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -115,11 +111,11 @@ func (a *API) CreateProject(params map[string]interface{}) (Project, error) {
 	if err != nil {
 		return Project{}, err
 	}
-	req, err := http.NewRequest("POST", "https://www.diggernaut.com/apiS/v1/projects/", bytes.NewReader(payload))
+	req, err := http.NewRequest("POST", "https://www.diggernaut.com/api/v1/projects/", bytes.NewReader(payload))
 	if err != nil {
 		return Project{}, err
 	}
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req.Header.Add("Authorization", "Token "+a.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -145,11 +141,11 @@ func (a *API) CreateProject(params map[string]interface{}) (Project, error) {
 
 // Get returns project parameters and rewrite Project
 func (p Project) Get() (Project, error) {
-	req, err := http.NewRequest("GET", "https://www.diggernaut.com/apiS/v1/projects/"+strconv.Itoa(p.ID), nil)
+	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID), nil)
 	if err != nil {
 		return p, err
 	}
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req.Header.Add("Authorization", "Token "+p.API.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -176,11 +172,11 @@ func (p Project) Put() (Project, error) {
 	if err != nil {
 		return p, err
 	}
-	req, err := http.NewRequest("PUT", "https://www.diggernaut.com/apiS/v1/projects/"+strconv.Itoa(p.ID), bytes.NewReader(payload))
+	req, err := http.NewRequest("PUT", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID), bytes.NewReader(payload))
 	if err != nil {
 		return p, err
 	}
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req.Header.Add("Authorization", "Token "+p.API.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -210,11 +206,11 @@ func (p Project) Patch() (Project, error) {
 	if err != nil {
 		return p, err
 	}
-	req, err := http.NewRequest("PATCH", "https://www.diggernaut.com/apiS/v1/projects/"+strconv.Itoa(p.ID), bytes.NewReader(payload))
+	req, err := http.NewRequest("PATCH", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID), bytes.NewReader(payload))
 	if err != nil {
 		return p, err
 	}
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req.Header.Add("Authorization", "Token "+p.API.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -239,11 +235,11 @@ func (p Project) Patch() (Project, error) {
 
 // Delete deletes project
 func (p Project) Delete() error {
-	req, err := http.NewRequest("DELETE", "https://www.diggernaut.com/apiS/v1/projects/"+strconv.Itoa(p.ID), nil)
+	req, err := http.NewRequest("DELETE", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID), nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req.Header.Add("Authorization", "Token "+p.API.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
@@ -261,8 +257,8 @@ func (p Project) Delete() error {
 // GetDiggers returns list of diggers from specified project
 // and push it in Project.Diggers slice
 func (p Project) GetDiggers() ([]Digger, error) {
-	req, _ := http.NewRequest("GET", "https://www.diggernaut.com/apiS/v1/projects/"+strconv.Itoa(p.ID)+"/diggers", nil)
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req, _ := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID)+"/diggers", nil)
+	req.Header.Add("Authorization", "Token "+p.API.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -295,11 +291,11 @@ func (p Project) CreateDigger(params map[string]interface{}) (Digger, error) {
 	if err != nil {
 		return Digger{}, err
 	}
-	req, err := http.NewRequest("POST", "https://www.diggernaut.com/apiS/v1/diggers/", bytes.NewReader(payload))
+	req, err := http.NewRequest("POST", "https://www.diggernaut.com/api/v1/diggers/", bytes.NewReader(payload))
 	if err != nil {
 		return Digger{}, err
 	}
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req.Header.Add("Authorization", "Token "+p.API.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -325,11 +321,11 @@ func (p Project) CreateDigger(params map[string]interface{}) (Digger, error) {
 // Get gets parameters for digger
 // and rewrite Digger
 func (d Digger) Get() (Digger, error) {
-	req, err := http.NewRequest("GET", "https://www.diggernaut.com/apiS/v1/diggers/"+strconv.Itoa(d.ID), nil)
+	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID), nil)
 	if err != nil {
 		return d, err
 	}
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req.Header.Add("Authorization", "Token "+d.API.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -356,11 +352,11 @@ func (d Digger) Put() (Digger, error) {
 	if err != nil {
 		return d, err
 	}
-	req, err := http.NewRequest("PUT", "https://www.diggernaut.com/apiS/v1/diggers/"+strconv.Itoa(d.ID), bytes.NewReader(payload))
+	req, err := http.NewRequest("PUT", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID), bytes.NewReader(payload))
 	if err != nil {
 		return d, err
 	}
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req.Header.Add("Authorization", "Token "+d.API.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
@@ -390,11 +386,11 @@ func (d Digger) Patch() (Digger, error) {
 	if err != nil {
 		return d, err
 	}
-	req, err := http.NewRequest("PATCH", "https://www.diggernaut.com/apiS/v1/diggers/"+strconv.Itoa(d.ID), bytes.NewReader(payload))
+	req, err := http.NewRequest("PATCH", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID), bytes.NewReader(payload))
 	if err != nil {
 		return d, err
 	}
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req.Header.Add("Authorization", "Token "+d.API.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
@@ -419,11 +415,11 @@ func (d Digger) Patch() (Digger, error) {
 
 // Delete deletes digger
 func (d Digger) Delete() error {
-	req, err := http.NewRequest("DELETE", "https://www.diggernaut.com/apiS/v1/diggers/"+strconv.Itoa(d.ID), nil)
+	req, err := http.NewRequest("DELETE", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID), nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req.Header.Add("Authorization", "Token "+d.API.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
@@ -440,11 +436,11 @@ func (d Digger) Delete() error {
 // GetSessions gets list of sessions for digger
 // and push it in Diggers.Sessions slice
 func (d Digger) GetSessions() ([]Session, error) {
-	req, err := http.NewRequest("GET", "https://www.diggernaut.com/apiS/v1/diggers/"+strconv.Itoa(d.ID)+"/sessions", nil)
+	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID)+"/sessions", nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req.Header.Add("Authorization", "Token "+d.API.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -470,11 +466,11 @@ func (d Digger) GetSessions() ([]Session, error) {
 // Get gets session parameters
 // and rewrite Session
 func (s Session) Get() (Session, error) {
-	req, err := http.NewRequest("GET", "https://www.diggernaut.com/apiS/v1/diggers/"+strconv.Itoa(s.DiggerID)+"/sessions/"+strconv.Itoa(s.ID), nil)
+	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(s.DiggerID)+"/sessions/"+strconv.Itoa(s.ID), nil)
 	if err != nil {
 		return s, err
 	}
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req.Header.Add("Authorization", "Token "+s.API.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -496,11 +492,11 @@ func (s Session) Get() (Session, error) {
 // GetData gets data scraped in given session
 // and push it in Session.Data
 func (s Session) GetData() (interface{}, error) {
-	req, err := http.NewRequest("GET", "https://www.diggernaut.com/apiS/v1/diggers/"+strconv.Itoa(s.DiggerID)+"/sessions/"+strconv.Itoa(s.ID)+"/data", nil)
+	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(s.DiggerID)+"/sessions/"+strconv.Itoa(s.ID)+"/data", nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", "Token "+apiSkey)
+	req.Header.Add("Authorization", "Token "+s.API.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
