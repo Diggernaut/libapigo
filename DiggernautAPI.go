@@ -1,4 +1,4 @@
-package DiggernautAPI
+package DiggernautAPIS
 
 import (
 	"bytes"
@@ -11,15 +11,33 @@ import (
 )
 
 var client = &http.Client{}
-var apikey string
+var apiSkey string
 
-// API struct contains slice of projects.
-type API struct {
+// APIS struct contains slice of projects.
+type APIS struct {
 	Projects []Project `json:"projects,omitempty"`
+}
+
+type API struct {
+	Key string
+}
+
+func New(key string) *API {
+	return &API{Key: key}
+}
+func NewProject(a *API) Project {
+	return Project{API: a}
+}
+func NewDigger(a *API) Digger {
+	return Digger{API: a}
+}
+func NewSession(a *API) Session {
+	return Session{API: a}
 }
 
 // Project cointains single project
 type Project struct {
+	API         *API
 	ID          int
 	Name        string
 	Description string
@@ -28,6 +46,7 @@ type Project struct {
 
 // Digger cointains single digger
 type Digger struct {
+	API          *API
 	ID           int
 	Name         string
 	URL          string
@@ -43,6 +62,7 @@ type Digger struct {
 
 // Session cointains single session
 type Session struct {
+	API        *API
 	DiggerID   int
 	ID         int
 	StartedAt  time.Time `json:"started_at,omitempty"`
@@ -55,173 +75,175 @@ type Session struct {
 	Data       interface{}
 }
 
-// SetUpAPIKey it`s startpoint for using our API
-// arg must be you API key
-func SetUpAPIKey(key string) {
-	apikey = key
+// SetUpAPISKey it`s startpoint for using our APIS
+// arg must be you APIS key
+func SetUpAPISKey(key string) {
+	apiSkey = key
 }
 
 // GetProjects returns list of projects linked with
-// authenticated user account and push it in API.Projects slice
-func (a *API) GetProjects() error {
-	req, _ := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/projects/", nil)
-	req.Header.Add("Authorization", "Token "+apikey)
+// authenticated user account and push it in APIS.Projects slice
+func (a *API) GetProjects() ([]Project, error) {
+	req, _ := http.NewRequest("GET", "https://www.diggernaut.com/apiS/v1/projects/", nil)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(string(body[:]))
+		return nil, errors.New(string(body[:]))
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
-	err = json.Unmarshal(body, &a.Projects)
+	var ret []Project
+	err = json.Unmarshal(body, &ret)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	return nil
+	for _, value := range ret {
+		value.API = a
+	}
+	return ret, nil
 }
 
 // CreateProject creates new project for authenticated user account
-// and push it in API.Projects slice
-func (a *API) CreateProject(params map[string]interface{}) error {
+// and push it in APIS.Projects slice
+func (a *API) CreateProject(params map[string]interface{}) (Project, error) {
 	payload, err := json.Marshal(params)
 	if err != nil {
-		return err
+		return Project{}, err
 	}
-	req, err := http.NewRequest("POST", "https://www.diggernaut.com/api/v1/projects/", bytes.NewReader(payload))
+	req, err := http.NewRequest("POST", "https://www.diggernaut.com/apiS/v1/projects/", bytes.NewReader(payload))
 	if err != nil {
-		return err
+		return Project{}, err
 	}
-	req.Header.Add("Authorization", "Token "+apikey)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return Project{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 201 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(string(body[:]))
+		return Project{}, errors.New(string(body[:]))
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return Project{}, err
 	}
-	p := Project{}
+	p := NewProject(a)
 	err = json.Unmarshal(body, &p)
 	if err != nil {
-		return err
+		return Project{}, err
 	}
-	a.Projects = append(a.Projects, p)
-	return nil
+	return p, nil
 }
 
 // Get returns project parameters and rewrite Project
-func (p *Project) Get() error {
-	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID), nil)
+func (p Project) Get() (Project, error) {
+	req, err := http.NewRequest("GET", "https://www.diggernaut.com/apiS/v1/projects/"+strconv.Itoa(p.ID), nil)
 	if err != nil {
-		return err
+		return p, err
 	}
-	req.Header.Add("Authorization", "Token "+apikey)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return p, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(string(body[:]))
+		return p, errors.New(string(body[:]))
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &p)
 	if err != nil {
-		return err
+		return p, err
 	}
-	return nil
+	return p, nil
 }
 
 // Put updates project parameters
 // and rewrite Project,
 // all required fields will be updated with sent parameters.
-func (p *Project) Put(params map[string]interface{}) error {
-	payload, err := json.Marshal(params)
+func (p Project) Put() (Project, error) {
+	payload, err := json.Marshal(p)
 	if err != nil {
-		return err
+		return p, err
 	}
-	req, err := http.NewRequest("PUT", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID), bytes.NewReader(payload))
+	req, err := http.NewRequest("PUT", "https://www.diggernaut.com/apiS/v1/projects/"+strconv.Itoa(p.ID), bytes.NewReader(payload))
 	if err != nil {
-		return err
+		return p, err
 	}
-	req.Header.Add("Authorization", "Token "+apikey)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return p, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(string(body[:]))
+		return p, errors.New(string(body[:]))
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return p, err
 	}
 	err = json.Unmarshal(body, p)
 	if err != nil {
-		return err
+		return p, err
 	}
-	return nil
+	return p, nil
 }
 
 // Patch updates project parameters partially
 // and rewrite Project,
 // only sent fields will be updated.
-func (p *Project) Patch(params map[string]interface{}) error {
-	payload, err := json.Marshal(params)
+func (p Project) Patch() (Project, error) {
+	payload, err := json.Marshal(p)
 	if err != nil {
-		return err
+		return p, err
 	}
-	req, err := http.NewRequest("PATCH", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID), bytes.NewReader(payload))
+	req, err := http.NewRequest("PATCH", "https://www.diggernaut.com/apiS/v1/projects/"+strconv.Itoa(p.ID), bytes.NewReader(payload))
 	if err != nil {
-		return err
+		return p, err
 	}
-	req.Header.Add("Authorization", "Token "+apikey)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return p, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(string(body[:]))
+		return p, errors.New(string(body[:]))
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return p, err
 	}
 
 	err = json.Unmarshal(body, p)
 	if err != nil {
-		return err
+		return p, err
 	}
-	return nil
+	return p, nil
 }
 
 // Delete deletes project
-func (p *Project) Delete() error {
-	req, err := http.NewRequest("DELETE", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID), nil)
+func (p Project) Delete() error {
+	req, err := http.NewRequest("DELETE", "https://www.diggernaut.com/apiS/v1/projects/"+strconv.Itoa(p.ID), nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Authorization", "Token "+apikey)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
@@ -238,165 +260,170 @@ func (p *Project) Delete() error {
 
 // GetDiggers returns list of diggers from specified project
 // and push it in Project.Diggers slice
-func (p *Project) GetDiggers() error {
-	req, _ := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID)+"/diggers", nil)
-	req.Header.Add("Authorization", "Token "+apikey)
+func (p Project) GetDiggers() ([]Digger, error) {
+	req, _ := http.NewRequest("GET", "https://www.diggernaut.com/apiS/v1/projects/"+strconv.Itoa(p.ID)+"/diggers", nil)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(string(body[:]))
+		return nil, errors.New(string(body[:]))
 	}
+
 	body, _ := ioutil.ReadAll(resp.Body)
-	err = json.Unmarshal(body, &p.Diggers)
+	var ret []Digger
+	err = json.Unmarshal(body, &ret)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	for _, value := range ret {
+		value.API = p.API
+	}
+	return ret, nil
+
 }
 
 // CreateDigger creates new digger for authenticated user account
 // and push it in Projects.Diggers slice
-func (p *Project) CreateDigger(params map[string]interface{}) error {
+func (p Project) CreateDigger(params map[string]interface{}) (Digger, error) {
 	params["project"] = p.ID
 	payload, err := json.Marshal(params)
 	if err != nil {
-		return err
+		return Digger{}, err
 	}
-	req, err := http.NewRequest("POST", "https://www.diggernaut.com/api/v1/diggers/", bytes.NewReader(payload))
+	req, err := http.NewRequest("POST", "https://www.diggernaut.com/apiS/v1/diggers/", bytes.NewReader(payload))
 	if err != nil {
-		return err
+		return Digger{}, err
 	}
-	req.Header.Add("Authorization", "Token "+apikey)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return Digger{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 201 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(string(body[:]))
+		return Digger{}, errors.New(string(body[:]))
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return Digger{}, err
 	}
-	d := Digger{}
+	d := NewDigger(p.API)
 	err = json.Unmarshal(body, &d)
 	if err != nil {
-		return err
+		return Digger{}, err
 	}
-	p.Diggers = append(p.Diggers, d)
-	return nil
+	return d, err
 }
 
 // Get gets parameters for digger
 // and rewrite Digger
-func (d *Digger) Get() error {
-	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID), nil)
+func (d Digger) Get() (Digger, error) {
+	req, err := http.NewRequest("GET", "https://www.diggernaut.com/apiS/v1/diggers/"+strconv.Itoa(d.ID), nil)
 	if err != nil {
-		return err
+		return d, err
 	}
-	req.Header.Add("Authorization", "Token "+apikey)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return d, err
 	}
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(string(body[:]))
+		return d, errors.New(string(body[:]))
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &d)
 	if err != nil {
-		return err
+		return d, err
 	}
-	return nil
+	return d, err
 }
 
 // Put updates digger parameters
 // and rewrite Digger,
 // all required fields will be updated with sent parameters
-func (d *Digger) Put(params map[string]interface{}) error {
-	payload, err := json.Marshal(params)
+func (d Digger) Put() (Digger, error) {
+	payload, err := json.Marshal(d)
 	if err != nil {
-		return err
+		return d, err
 	}
-	req, err := http.NewRequest("PUT", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID), bytes.NewReader(payload))
+	req, err := http.NewRequest("PUT", "https://www.diggernaut.com/apiS/v1/diggers/"+strconv.Itoa(d.ID), bytes.NewReader(payload))
 	if err != nil {
-		return err
+		return d, err
 	}
-	req.Header.Add("Authorization", "Token "+apikey)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
 	if err != nil {
-		return err
+		return d, err
 	}
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(string(body[:]))
+		return d, errors.New(string(body[:]))
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return d, err
 	}
 	err = json.Unmarshal(body, d)
 	if err != nil {
-		return err
+		return d, err
 	}
-	return nil
+	return d, nil
 }
 
 // Patch updates digger parameters partially
 // and rewrite Digger,
 // only sent fields will be updated.
-func (d *Digger) Patch(params map[string]interface{}) error {
-	payload, err := json.Marshal(params)
+func (d Digger) Patch() (Digger, error) {
+	payload, err := json.Marshal(d)
 	if err != nil {
-		return err
+		return d, err
 	}
-	req, err := http.NewRequest("PATCH", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID), bytes.NewReader(payload))
+	req, err := http.NewRequest("PATCH", "https://www.diggernaut.com/apiS/v1/diggers/"+strconv.Itoa(d.ID), bytes.NewReader(payload))
 	if err != nil {
-		return err
+		return d, err
 	}
-	req.Header.Add("Authorization", "Token "+apikey)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
 	if err != nil {
-		return err
+		return d, err
 	}
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(string(body[:]))
+		return d, errors.New(string(body[:]))
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return d, err
 	}
 
 	err = json.Unmarshal(body, d)
 	if err != nil {
-		return err
+		return d, err
 	}
-	return nil
+	return d, nil
 }
 
 // Delete deletes digger
-func (d *Digger) Delete() error {
-	req, err := http.NewRequest("DELETE", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID), nil)
+func (d Digger) Delete() error {
+	req, err := http.NewRequest("DELETE", "https://www.diggernaut.com/apiS/v1/diggers/"+strconv.Itoa(d.ID), nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Authorization", "Token "+apikey)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
@@ -412,78 +439,82 @@ func (d *Digger) Delete() error {
 
 // GetSessions gets list of sessions for digger
 // and push it in Diggers.Sessions slice
-func (d *Digger) GetSessions() error {
-	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID)+"/sessions", nil)
+func (d Digger) GetSessions() ([]Session, error) {
+	req, err := http.NewRequest("GET", "https://www.diggernaut.com/apiS/v1/diggers/"+strconv.Itoa(d.ID)+"/sessions", nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	req.Header.Add("Authorization", "Token "+apikey)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(string(body[:]))
+		return nil, errors.New(string(body[:]))
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
-	err = json.Unmarshal(body, &d.Sessions)
+	var ret []Session
+	err = json.Unmarshal(body, &ret)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	for _, value := range ret {
+		value.API = d.API
+	}
+	return ret, nil
 }
 
 // Get gets session parameters
 // and rewrite Session
-func (s *Session) Get() error {
-	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(s.DiggerID)+"/sessions/"+strconv.Itoa(s.ID), nil)
+func (s Session) Get() (Session, error) {
+	req, err := http.NewRequest("GET", "https://www.diggernaut.com/apiS/v1/diggers/"+strconv.Itoa(s.DiggerID)+"/sessions/"+strconv.Itoa(s.ID), nil)
 	if err != nil {
-		return err
+		return s, err
 	}
-	req.Header.Add("Authorization", "Token "+apikey)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return s, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(string(body[:]))
+		return s, errors.New(string(body[:]))
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &s)
 	if err != nil {
-		return err
+		return s, err
 	}
-	return nil
+	return s, nil
 }
 
 // GetData gets data scraped in given session
 // and push it in Session.Data
-func (s *Session) GetData() error {
-	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(s.DiggerID)+"/sessions/"+strconv.Itoa(s.ID)+"/data", nil)
+func (s Session) GetData() (interface{}, error) {
+	req, err := http.NewRequest("GET", "https://www.diggernaut.com/apiS/v1/diggers/"+strconv.Itoa(s.DiggerID)+"/sessions/"+strconv.Itoa(s.ID)+"/data", nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	req.Header.Add("Authorization", "Token "+apikey)
+	req.Header.Add("Authorization", "Token "+apiSkey)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return errors.New(string(body[:]))
+		return nil, errors.New(string(body[:]))
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &s.Data)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return s.Data, nil
 }
