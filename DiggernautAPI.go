@@ -121,7 +121,7 @@ func (a *API) CreateProject(params map[string]interface{}) error {
 	return nil
 }
 
-// Get returns project parameters and rewrite Project in API.Projects slice
+// Get returns project parameters and rewrite Project
 func (p *Project) Get() error {
 	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID), nil)
 	if err != nil {
@@ -147,7 +147,7 @@ func (p *Project) Get() error {
 }
 
 // Put updates project parameters
-// and rewrite Project in API.Projects slice,
+// and rewrite Project,
 // all required fields will be updated with sent parameters.
 func (p *Project) Put(params map[string]interface{}) error {
 	payload, err := json.Marshal(params)
@@ -181,7 +181,7 @@ func (p *Project) Put(params map[string]interface{}) error {
 }
 
 // Patch updates project parameters partially
-// and rewrite Project in API.Projects slice,
+// and rewrite Project,
 // only sent fields will be updated.
 func (p *Project) Patch(params map[string]interface{}) error {
 	payload, err := json.Marshal(params)
@@ -216,8 +216,6 @@ func (p *Project) Patch(params map[string]interface{}) error {
 }
 
 // Delete deletes project
-// Note! you must call API.GetProjects()
-// to update Projects slice
 func (p *Project) Delete() error {
 	req, err := http.NewRequest("DELETE", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID), nil)
 	if err != nil {
@@ -239,7 +237,7 @@ func (p *Project) Delete() error {
 }
 
 // GetDiggers returns list of diggers from specified project
-// and push it in API.Projects[p.ID].Diggers slice
+// and push it in Project.Diggers slice
 func (p *Project) GetDiggers() error {
 	req, _ := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID)+"/diggers", nil)
 	req.Header.Add("Authorization", "Token "+apikey)
@@ -262,7 +260,7 @@ func (p *Project) GetDiggers() error {
 }
 
 // CreateDigger creates new digger for authenticated user account
-// and push it in API.Projects[p.ID].Diggers slice
+// and push it in Projects.Diggers slice
 func (p *Project) CreateDigger(params map[string]interface{}) error {
 	params["project"] = p.ID
 	payload, err := json.Marshal(params)
@@ -298,7 +296,7 @@ func (p *Project) CreateDigger(params map[string]interface{}) error {
 }
 
 // Get gets parameters for digger
-// and rewrite Digger in API.Projects[p.ID].Digger[d.ID] slice
+// and rewrite Digger
 func (d *Digger) Get() error {
 	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID), nil)
 	if err != nil {
@@ -324,7 +322,7 @@ func (d *Digger) Get() error {
 }
 
 // Put updates digger parameters
-// and rewrite Digger in API.Projects[p.ID].Digger[d.ID] slice,
+// and rewrite Digger,
 // all required fields will be updated with sent parameters
 func (d *Digger) Put(params map[string]interface{}) error {
 	payload, err := json.Marshal(params)
@@ -358,7 +356,7 @@ func (d *Digger) Put(params map[string]interface{}) error {
 }
 
 // Patch updates digger parameters partially
-// and rewrite Digger in API.Projects[p.ID].Digger[d.ID] slice,
+// and rewrite Digger,
 // only sent fields will be updated.
 func (d *Digger) Patch(params map[string]interface{}) error {
 	payload, err := json.Marshal(params)
@@ -393,8 +391,6 @@ func (d *Digger) Patch(params map[string]interface{}) error {
 }
 
 // Delete deletes digger
-// Note! you must call Project[p.ID].GetDiggers()
-// to update Diggers slice
 func (d *Digger) Delete() error {
 	req, err := http.NewRequest("DELETE", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID), nil)
 	if err != nil {
@@ -415,7 +411,7 @@ func (d *Digger) Delete() error {
 }
 
 // GetSessions gets list of sessions for digger
-// and push it in API.Projects[p.ID].Diggers[d.ID].Sessions slice
+// and push it in Diggers.Sessions slice
 func (d *Digger) GetSessions() error {
 	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID)+"/sessions", nil)
 	if err != nil {
@@ -441,7 +437,7 @@ func (d *Digger) GetSessions() error {
 }
 
 // Get gets session parameters
-// and rewrite it in API.Projects[p.ID].Diggers[d.ID].Sessions[s.ID] slice
+// and rewrite Session
 func (s *Session) Get() error {
 	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(s.DiggerID)+"/sessions/"+strconv.Itoa(s.ID), nil)
 	if err != nil {
@@ -467,7 +463,7 @@ func (s *Session) Get() error {
 }
 
 // GetData gets data scraped in given session
-// and push it in API.Projects[p.ID].Diggers[d.ID].Sessions[s.ID].Data
+// and push it in Session.Data
 func (s *Session) GetData() error {
 	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(s.DiggerID)+"/sessions/"+strconv.Itoa(s.ID)+"/data", nil)
 	if err != nil {
