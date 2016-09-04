@@ -64,7 +64,6 @@ func (p *Project) ID() int {
 	return p.id
 }
 
-// Digger cointains single digger
 type Digger struct {
 	API          *API
 	id           int
