@@ -2,6 +2,8 @@
 
 Diggernaut Official API Library for Go
 
+This repo still in development.
+
 #### install:
 
 go get github.com/Diggernaut/libapigo
@@ -13,14 +15,13 @@ package main
 import (
 	"fmt"
 
-	dig "github.com/Diggernaut/libapigo"
+	diggernaut "github.com/Diggernaut/libapigo"
 )
 
 func main() {
-	dig.SetUpAPIKey("f98c1dc37033a8b1755f839685062cf422221111")
-	API := dig.API{}
-	API.GetProjects()
-	fmt.Println(API.Projects)
+	dig := diggernaut.New("f98c1dc37033a8b1755f839685062cf422221111")
+	projects := dig.GetProjects()
+	fmt.Println(projects)
 	//prints [{1 ProjectName  []}]
 }
 ```
