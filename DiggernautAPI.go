@@ -43,6 +43,14 @@ type Project struct {
 	Description string
 }
 
+func (p *Project) String() string  {
+	return "\n\nProject{" + "\n    API: " + p.API.Key + "\n    ID: " + strconv.Itoa(p.ID()) + "\n    Name: " + p.Name + "\n    Descrition: " + p.Description + "}"
+}
+
+func (p *Project) ID() int  {
+	return p.id
+}
+
 func (p *Project) UnmarshalJSON(data []byte) error {
 	type project struct {
 		ID          int
@@ -58,10 +66,6 @@ func (p *Project) UnmarshalJSON(data []byte) error {
 	p.Name = proj.Name
 	p.Description = proj.Description
 	return nil
-}
-
-func (p *Project) ID() int {
-	return p.id
 }
 
 type Digger struct {
@@ -111,10 +115,13 @@ func (d *Digger) UnmarshalJSON(data []byte) error {
 	d.calls = dig.Calls
 	d.requests = dig.Requests
 	d.LastSession = dig.LastSession
-	d.LastSession.api = d.API
-
 	return nil
 
+}
+func (d *Digger) String() string {
+	return "\n\nDigger{ " + "\n" + "ID: " + strconv.Itoa(d.ID()) + "\n" + "Status: " + d.Status() + 
+		"\n" + "Bandwidth: " + d.BandwidthString() + "\n" + "Requests: " + strconv.Itoa(d.Requests()) + "\n" + "Schedule from: " +
+		d.Schedulefrom.String() + "\n" + "Schedule to: " + d.Scheduleto.String() +"\nLastSession{"+ d.LastSession.StringToDigger() +"}}"
 }
 func (d *Digger) SetID(id int) {
 	d.id = id
@@ -139,7 +146,6 @@ func (d *Digger) Requests() int {
 }
 
 
-// Session cointains single session
 type Session struct {
 	api        *API
 	digger     int
@@ -199,7 +205,7 @@ func (s *Session) Runtime() int {
 }
 func (s *Session) RuntimeString() string {
 	t, _ := time.ParseDuration(fmt.Sprint(s.Runtime()) + "s")
-	return  t.String()
+	return t.String()
 }
 func (s *Session) BandwidthString() string {
 	return fmt.Sprintf("%.2f", s.bandwidth/1024/1024) + " Mb"
@@ -226,13 +232,12 @@ func (s *Session) API() *API {
 	return s.api
 }
 func (s *Session) String() string {
-	return "\nDigger: " + strconv.Itoa(s.Digger()) + "\n" + "ID: " + strconv.Itoa(s.ID()) + "\n" + "State: " + s.State() + "\n" + "Runtime: " + s.RuntimeString() +
-		"\n" + "Bandwidth: " + s.BandwidthString() + "\n" + "Requests: " + strconv.Itoa(s.Requests()) + "\n" + "Errors: " + strconv.Itoa(s.Errors()) + "\n" + "Started At: " +
-		s.StartedAt().String() + "\n" + "Finished At: " + s.FinishedAt().String()
+	return "\nDiggerID: " + strconv.Itoa(s.Digger()) + "\n" + "ID: " + strconv.Itoa(s.ID()) + "\n" + "State: " + s.State() + "\n" + "Runtime: " + s.RuntimeString() + "\n" + "Bandwidth: " + s.BandwidthString() + "\n" + "Requests: " + strconv.Itoa(s.Requests()) + "\n" + "Errors: " + strconv.Itoa(s.Errors()) + "\n" + "Started At: " + s.StartedAt().String() + "\n" + "Finished At: " + s.FinishedAt().String() 
 }
 
-// GetProjects returns list of projects linked with
-// authenticated user account and push it in APIS.Projects slice
+func (s *Session) StringToDigger() string {
+	return "\n    DiggerID: " + strconv.Itoa(s.Digger()) + "\n" + "    ID: " + strconv.Itoa(s.ID()) + "\n" + "    State: " + s.State() + "\n" + "    Runtime: " + s.RuntimeString() + "\n" + "    Bandwidth: " + s.BandwidthString() + "\n" + "    Requests: " + strconv.Itoa(s.Requests()) + "\n" + "    Errors: " + strconv.Itoa(s.Errors()) + "\n" + "    Started At: " + s.StartedAt().String() + "\n" + "    Finished At: " + s.FinishedAt().String() 
+}
 func (a *API) GetProjects() ([]*Project, error) {
 	req, _ := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/projects/", nil)
 	req.Header.Add("Authorization", "Token "+a.Key)
@@ -257,9 +262,58 @@ func (a *API) GetProjects() ([]*Project, error) {
 	}
 	return ret, nil
 }
+func (a *API) GetDiggers() ([]*Digger, error) {
+	req, _ := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/", nil)
+	req.Header.Add("Authorization", "Token "+a.Key)
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return nil, errors.New(string(body[:]))
+	}
+	body, _ := ioutil.ReadAll(resp.Body)
+	var ret []*Digger
+	err = json.Unmarshal(body, &ret)
+	if err != nil {
+		return nil, err
+	}
+	for _, value := range ret {
+		value.API = a
+		value.LastSession.api = a
+	}
+	return ret, nil
+}
 
-// CreateProject creates new project for authenticated user account
-// and push it in APIS.Projects slice
+func (a *API) GetSessions() ([]*Session, error) {
+	req, _ := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/session/", nil)
+	req.Header.Add("Authorization", "Token "+a.Key)
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return nil, errors.New(string(body[:]))
+	}
+	body, _ := ioutil.ReadAll(resp.Body)
+	var ret []*Session
+	err = json.Unmarshal(body, &ret)
+	if err != nil {
+		return nil, err
+	}
+	for _, value := range ret {
+		value.api = a
+	}
+	return ret, nil
+}
+
+
 func (a *API) CreateProject(params map[string]interface{}) (Project, error) {
 	payload, err := json.Marshal(params)
 	if err != nil {
@@ -293,7 +347,6 @@ func (a *API) CreateProject(params map[string]interface{}) (Project, error) {
 	return p, nil
 }
 
-// Get returns project parameters and rewrite Project
 func (p Project) Get() (Project, error) {
 	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID()), nil)
 	if err != nil {
@@ -318,9 +371,6 @@ func (p Project) Get() (Project, error) {
 	return p, nil
 }
 
-// Put updates project parameters
-// and rewrite Project,
-// all required fields will be updated with sent parameters.
 func (p Project) Put() (Project, error) {
 	payload, err := json.Marshal(p)
 	if err != nil {
@@ -352,9 +402,6 @@ func (p Project) Put() (Project, error) {
 	return p, nil
 }
 
-// Patch updates project parameters partially
-// and rewrite Project,
-// only sent fields will be updated.
 func (p Project) Patch() (Project, error) {
 	payload, err := json.Marshal(p)
 	if err != nil {
@@ -387,7 +434,6 @@ func (p Project) Patch() (Project, error) {
 	return p, nil
 }
 
-// Delete deletes project
 func (p Project) Delete() error {
 	req, err := http.NewRequest("DELETE", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID()), nil)
 	if err != nil {
@@ -408,8 +454,6 @@ func (p Project) Delete() error {
 	return nil
 }
 
-// GetDiggers returns list of diggers from specified project
-// and push it in Project.Diggers slice
 func (p *Project) GetDiggers() ([]*Digger, error) {
 	req, _ := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/projects/"+strconv.Itoa(p.ID())+"/diggers", nil)
 	req.Header.Add("Authorization", "Token "+p.API.Key)
@@ -438,8 +482,6 @@ func (p *Project) GetDiggers() ([]*Digger, error) {
 
 }
 
-// CreateDigger creates new digger for authenticated user account
-// and push it in Projects.Diggers slice
 func (p *Project) CreateDigger(params map[string]interface{}) (*Digger, error) {
 	params["project"] = p.ID
 	payload, err := json.Marshal(params)
@@ -473,8 +515,6 @@ func (p *Project) CreateDigger(params map[string]interface{}) (*Digger, error) {
 	return &d, err
 }
 
-// Get gets parameters for digger
-// and rewrite Digger
 func (d *Digger) Get() (*Digger, error) {
 	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID()), nil)
 	if err != nil {
@@ -499,9 +539,6 @@ func (d *Digger) Get() (*Digger, error) {
 	return d, err
 }
 
-// Put updates digger parameters
-// and rewrite Digger,
-// all required fields will be updated with sent parameters
 func (d *Digger) Put() (*Digger, error) {
 	payload, err := json.Marshal(d)
 	if err != nil {
@@ -533,9 +570,6 @@ func (d *Digger) Put() (*Digger, error) {
 	return d, nil
 }
 
-// Patch updates digger parameters partially
-// and rewrite Digger,
-// only sent fields will be updated.
 func (d *Digger) Patch() (*Digger, error) {
 	payload, err := json.Marshal(d)
 	if err != nil {
@@ -568,7 +602,6 @@ func (d *Digger) Patch() (*Digger, error) {
 	return d, nil
 }
 
-// Delete deletes digger
 func (d *Digger) Delete() error {
 	req, err := http.NewRequest("DELETE", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID()), nil)
 	if err != nil {
@@ -589,8 +622,6 @@ func (d *Digger) Delete() error {
 	return nil
 }
 
-// GetSessions gets list of sessions for digger
-// and push it in Diggers.Sessions slice
 func (d *Digger) GetSessions() ([]*Session, error) {
 	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(d.ID())+"/sessions", nil)
 	if err != nil {
@@ -619,8 +650,6 @@ func (d *Digger) GetSessions() ([]*Session, error) {
 	return ret, nil
 }
 
-// Get gets session parameters
-// and rewrite Session
 func (s *Session) Get() (*Session, error) {
 	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(s.Digger())+"/sessions/"+strconv.Itoa(s.ID()), nil)
 	if err != nil {
@@ -645,8 +674,6 @@ func (s *Session) Get() (*Session, error) {
 	return s, nil
 }
 
-// GetData gets data scraped in given session
-// and push it in Session.Data
 func (s *Session) GetData() (interface{}, error) {
 	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(s.Digger())+"/sessions/"+strconv.Itoa(s.ID())+"/data", nil)
 	if err != nil {
