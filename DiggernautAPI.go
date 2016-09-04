@@ -36,7 +36,6 @@ func NewSession(a *API) Session {
 	return Session{api: a}
 }
 
-// Project cointains single project
 type Project struct {
 	API         *API
 	id          int
