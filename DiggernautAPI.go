@@ -651,7 +651,7 @@ func (d *Digger) GetSessions() ([]*Session, error) {
 }
 
 func (s *Session) Get() (*Session, error) {
-	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(s.Digger())+"/sessions/"+strconv.Itoa(s.ID()), nil)
+	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/sessions/"+strconv.Itoa(s.ID()), nil)
 	if err != nil {
 		return s, err
 	}
@@ -675,7 +675,7 @@ func (s *Session) Get() (*Session, error) {
 }
 
 func (s *Session) GetData() (interface{}, error) {
-	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(s.Digger())+"/sessions/"+strconv.Itoa(s.ID())+"/data", nil)
+	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/sessions/"+strconv.Itoa(s.ID())+"/data", nil)
 	if err != nil {
 		return nil, err
 	}
