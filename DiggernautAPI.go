@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/Diggernaut/timestamp"
 )
@@ -68,6 +69,7 @@ func (p *Project) ID() int {
 type Digger struct {
 	API          *API
 	id           int
+	project      int
 	Name         string
 	URL          string
 	Config       string `json:"config,omitempty"`
@@ -77,11 +79,13 @@ type Digger struct {
 	bandwidth    float64
 	calls        int
 	requests     int
+	LastSession  *Session
 }
 
 func (d *Digger) UnmarshalJSON(data []byte) error {
 	type digger struct {
 		ID           int `json:"Id"`
+		Project      int
 		Name         string
 		URL          string
 		Config       string `json:"config,omitempty"`
@@ -91,6 +95,7 @@ func (d *Digger) UnmarshalJSON(data []byte) error {
 		Bandwidth    float64
 		Calls        int
 		Requests     int
+		LastSession  *Session `json:"last_session"`
 	}
 	dig := digger{}
 	err := json.Unmarshal(data, &dig)
@@ -107,9 +112,14 @@ func (d *Digger) UnmarshalJSON(data []byte) error {
 	d.bandwidth = dig.Bandwidth
 	d.calls = dig.Calls
 	d.requests = dig.Requests
+	d.LastSession = dig.LastSession
+	d.LastSession.api = d.API
 
 	return nil
 
+}
+func (d *Digger) SetID(id int) {
+	d.id = id
 }
 func (d *Digger) ID() int {
 	return d.id
@@ -130,10 +140,11 @@ func (d *Digger) Requests() int {
 	return d.requests
 }
 
+
 // Session cointains single session
 type Session struct {
 	api        *API
-	diggerID   int
+	digger     int
 	id         int
 	startedAt  timestamp.Timestamp `json:"started_at,omitempty"`
 	finishedAt timestamp.Timestamp `json:"finished_at,omitempty"`
@@ -148,7 +159,7 @@ type Session struct {
 func (s *Session) UnmarshalJSON(data []byte) error {
 	type session struct {
 		ID         int `json:"Id"`
-		DiggerID   int
+		Digger     int
 		StartedAt  timestamp.Timestamp `json:"started_at,omitempty"`
 		FinishedAt timestamp.Timestamp `json:"finished_at,omitempty"`
 		State      string
@@ -164,7 +175,7 @@ func (s *Session) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	s.id = ses.ID
-	s.diggerID = ses.DiggerID
+	s.digger = ses.Digger
 	s.startedAt = ses.StartedAt
 	s.finishedAt = ses.FinishedAt
 	s.state = ses.State
@@ -176,8 +187,8 @@ func (s *Session) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (s *Session) DiggerID() int {
-	return s.diggerID
+func (s *Session) Digger() int {
+	return s.digger
 }
 func (s *Session) ID() int {
 	return s.id
@@ -187,6 +198,10 @@ func (s *Session) State() string {
 }
 func (s *Session) Runtime() int {
 	return s.runtime
+}
+func (s *Session) RuntimeString() string {
+	t, _ := time.ParseDuration(fmt.Sprint(s.Runtime()) + "s")
+	return  t.String()
 }
 func (s *Session) BandwidthString() string {
 	return fmt.Sprintf("%.2f", s.bandwidth/1024/1024) + " Mb"
@@ -211,6 +226,11 @@ func (s *Session) FinishedAt() timestamp.Timestamp {
 }
 func (s *Session) API() *API {
 	return s.api
+}
+func (s *Session) String() string {
+	return "\nDigger: " + strconv.Itoa(s.Digger()) + "\n" + "ID: " + strconv.Itoa(s.ID()) + "\n" + "State: " + s.State() + "\n" + "Runtime: " + s.RuntimeString() +
+		"\n" + "Bandwidth: " + s.BandwidthString() + "\n" + "Requests: " + strconv.Itoa(s.Requests()) + "\n" + "Errors: " + strconv.Itoa(s.Errors()) + "\n" + "Started At: " +
+		s.StartedAt().String() + "\n" + "Finished At: " + s.FinishedAt().String()
 }
 
 // GetProjects returns list of projects linked with
@@ -237,7 +257,6 @@ func (a *API) GetProjects() ([]*Project, error) {
 	for _, value := range ret {
 		value.API = a
 	}
-	fmt.Printf("%+v\n", ret[0])
 	return ret, nil
 }
 
@@ -415,6 +434,7 @@ func (p *Project) GetDiggers() ([]*Digger, error) {
 	}
 	for _, value := range ret {
 		value.API = p.API
+		value.LastSession.api = p.API
 	}
 	return ret, nil
 
@@ -604,7 +624,7 @@ func (d *Digger) GetSessions() ([]*Session, error) {
 // Get gets session parameters
 // and rewrite Session
 func (s *Session) Get() (*Session, error) {
-	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(s.DiggerID())+"/sessions/"+strconv.Itoa(s.ID()), nil)
+	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(s.Digger())+"/sessions/"+strconv.Itoa(s.ID()), nil)
 	if err != nil {
 		return s, err
 	}
@@ -630,7 +650,7 @@ func (s *Session) Get() (*Session, error) {
 // GetData gets data scraped in given session
 // and push it in Session.Data
 func (s *Session) GetData() (interface{}, error) {
-	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(s.DiggerID())+"/sessions/"+strconv.Itoa(s.ID())+"/data", nil)
+	req, err := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/diggers/"+strconv.Itoa(s.Digger())+"/sessions/"+strconv.Itoa(s.ID())+"/data", nil)
 	if err != nil {
 		return nil, err
 	}
