@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Diggernaut/timestamp"
@@ -43,11 +44,11 @@ type Project struct {
 	Description string
 }
 
-func (p *Project) String() string  {
+func (p *Project) String() string {
 	return "\n\nProject{" + "\n    API: " + p.API.Key + "\n    ID: " + strconv.Itoa(p.ID()) + "\n    Name: " + p.Name + "\n    Descrition: " + p.Description + "}"
 }
 
-func (p *Project) ID() int  {
+func (p *Project) ID() int {
 	return p.id
 }
 
@@ -100,7 +101,9 @@ func (d *Digger) UnmarshalJSON(data []byte) error {
 		LastSession  *Session `json:"last_session"`
 	}
 	dig := digger{}
-	err := json.Unmarshal(data, &dig)
+	decoder := json.NewDecoder(strings.NewReader(string(data)))
+	decoder.UseNumber()
+	err := decoder.Decode(&dig)
 	if err != nil {
 		return err
 	}
@@ -119,9 +122,9 @@ func (d *Digger) UnmarshalJSON(data []byte) error {
 
 }
 func (d *Digger) String() string {
-	return "\n\nDigger{ " + "\n" + "ID: " + strconv.Itoa(d.ID()) + "\n" + "Status: " + d.Status() + 
+	return "\n\nDigger{ " + "\n" + "ID: " + strconv.Itoa(d.ID()) + "\n" + "Status: " + d.Status() +
 		"\n" + "Bandwidth: " + d.BandwidthString() + "\n" + "Requests: " + strconv.Itoa(d.Requests()) + "\n" + "Schedule from: " +
-		d.Schedulefrom.String() + "\n" + "Schedule to: " + d.Scheduleto.String() +"\nLastSession{"+ d.LastSession.StringToDigger() +"}}"
+		d.Schedulefrom.String() + "\n" + "Schedule to: " + d.Scheduleto.String() + "\nLastSession{" + d.LastSession.StringToDigger() + "}}"
 }
 func (d *Digger) SetID(id int) {
 	d.id = id
@@ -144,7 +147,6 @@ func (d *Digger) Calls() int {
 func (d *Digger) Requests() int {
 	return d.requests
 }
-
 
 type Session struct {
 	api        *API
@@ -231,12 +233,15 @@ func (s *Session) FinishedAt() timestamp.Timestamp {
 func (s *Session) API() *API {
 	return s.api
 }
+func (s *Session) SetID(id int) {
+	s.id = id
+}
 func (s *Session) String() string {
-	return "\nDiggerID: " + strconv.Itoa(s.Digger()) + "\n" + "ID: " + strconv.Itoa(s.ID()) + "\n" + "State: " + s.State() + "\n" + "Runtime: " + s.RuntimeString() + "\n" + "Bandwidth: " + s.BandwidthString() + "\n" + "Requests: " + strconv.Itoa(s.Requests()) + "\n" + "Errors: " + strconv.Itoa(s.Errors()) + "\n" + "Started At: " + s.StartedAt().String() + "\n" + "Finished At: " + s.FinishedAt().String() 
+	return "\nDiggerID: " + strconv.Itoa(s.Digger()) + "\n" + "ID: " + strconv.Itoa(s.ID()) + "\n" + "State: " + s.State() + "\n" + "Runtime: " + s.RuntimeString() + "\n" + "Bandwidth: " + s.BandwidthString() + "\n" + "Requests: " + strconv.Itoa(s.Requests()) + "\n" + "Errors: " + strconv.Itoa(s.Errors()) + "\n" + "Started At: " + s.StartedAt().String() + "\n" + "Finished At: " + s.FinishedAt().String()
 }
 
 func (s *Session) StringToDigger() string {
-	return "\n    DiggerID: " + strconv.Itoa(s.Digger()) + "\n" + "    ID: " + strconv.Itoa(s.ID()) + "\n" + "    State: " + s.State() + "\n" + "    Runtime: " + s.RuntimeString() + "\n" + "    Bandwidth: " + s.BandwidthString() + "\n" + "    Requests: " + strconv.Itoa(s.Requests()) + "\n" + "    Errors: " + strconv.Itoa(s.Errors()) + "\n" + "    Started At: " + s.StartedAt().String() + "\n" + "    Finished At: " + s.FinishedAt().String() 
+	return "\n    DiggerID: " + strconv.Itoa(s.Digger()) + "\n" + "    ID: " + strconv.Itoa(s.ID()) + "\n" + "    State: " + s.State() + "\n" + "    Runtime: " + s.RuntimeString() + "\n" + "    Bandwidth: " + s.BandwidthString() + "\n" + "    Requests: " + strconv.Itoa(s.Requests()) + "\n" + "    Errors: " + strconv.Itoa(s.Errors()) + "\n" + "    Started At: " + s.StartedAt().String() + "\n" + "    Finished At: " + s.FinishedAt().String()
 }
 func (a *API) GetProjects() ([]*Project, error) {
 	req, _ := http.NewRequest("GET", "https://www.diggernaut.com/api/v1/projects/", nil)
@@ -312,7 +317,6 @@ func (a *API) GetSessions() ([]*Session, error) {
 	}
 	return ret, nil
 }
-
 
 func (a *API) CreateProject(params map[string]interface{}) (Project, error) {
 	payload, err := json.Marshal(params)
@@ -533,6 +537,8 @@ func (d *Digger) Get() (*Digger, error) {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &d)
+
+	d.LastSession.api = d.API
 	if err != nil {
 		return d, err
 	}
@@ -690,7 +696,7 @@ func (s *Session) GetData() (interface{}, error) {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return nil, errors.New(string(body[:]))
 	}
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &s.data)
 	if err != nil {
 		return nil, err
