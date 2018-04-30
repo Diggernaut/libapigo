@@ -27,14 +27,14 @@ func (a API) String() string {
 func New(key string) *API {
 	return &API{Key: key}
 }
-func NewProject(a *API) Project {
-	return Project{API: a}
+func NewProject(a *API) *Project {
+	return &Project{API: a}
 }
-func NewDigger(a *API) Digger {
-	return Digger{API: a}
+func NewDigger(a *API) *Digger {
+	return &Digger{API: a}
 }
-func NewSession(a *API) Session {
-	return Session{api: a}
+func NewSession(a *API) *Session {
+	return &Session{api: a}
 }
 
 type Project struct {
@@ -318,35 +318,35 @@ func (a *API) GetSessions() ([]*Session, error) {
 	return ret, nil
 }
 
-func (a *API) CreateProject(params map[string]interface{}) (Project, error) {
+func (a *API) CreateProject(params map[string]interface{}) (*Project, error) {
 	payload, err := json.Marshal(params)
 	if err != nil {
-		return Project{}, err
+		return &Project{}, err
 	}
 	req, err := http.NewRequest("POST", "https://www.diggernaut.com/api/v1/projects/", bytes.NewReader(payload))
 	if err != nil {
-		return Project{}, err
+		return &Project{}, err
 	}
 	req.Header.Add("Authorization", "Token "+a.Key)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return Project{}, err
+		return &Project{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 201 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return Project{}, errors.New(string(body[:]))
+		return &Project{}, errors.New(string(body[:]))
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return Project{}, err
+		return &Project{}, err
 	}
 	p := NewProject(a)
 	err = json.Unmarshal(body, &p)
 	if err != nil {
-		return Project{}, err
+		return &Project{}, err
 	}
 	return p, nil
 }
@@ -516,7 +516,7 @@ func (p *Project) CreateDigger(params map[string]interface{}) (*Digger, error) {
 	if err != nil {
 		return &Digger{}, err
 	}
-	return &d, err
+	return d, err
 }
 
 func (d *Digger) Get() (*Digger, error) {
